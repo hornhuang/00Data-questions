@@ -3,4 +3,5 @@
 
     <string name="accessibility_service">超弦服务</string>
     <string name="call_interface">调用接口</string>
+    <string name="accessibility_description">用于开启微信服务</string>
 </resources>
