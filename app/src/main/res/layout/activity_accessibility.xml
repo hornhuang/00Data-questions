@@ -51,11 +51,20 @@
     </RelativeLayout>
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/btn_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
-        android:text="send"/>
+        android:text="发送文字"/>
+
+    <Button
+        android:id="@+id/btn_pic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btn_text"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:text="发送图片"/>
 
 </RelativeLayout>
