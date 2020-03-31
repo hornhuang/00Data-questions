@@ -4,10 +4,13 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
@@ -28,9 +31,10 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
  * @author _yuanhao
  * @data 2020.3.31
  */
-public class AccessibilityActivity extends AppCompatActivity {
+public class AccessibilityActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private Button button;
+    private Button mTextBtn;
+    private Button mPicBtn;
     private EditText et_name, et_content;
     private Context mContext;
 
@@ -53,55 +57,28 @@ public class AccessibilityActivity extends AppCompatActivity {
         registerReceiver(broadcastReceiver,new IntentFilter("FIND_CONTANCT_RESULT"));
 
         init();
-
     }
 
     private void init() {
         Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.accessibility_service);
 
-        button = findViewById(R.id.button);
+        mTextBtn = findViewById(R.id.btn_text);
+        mPicBtn = findViewById(R.id.btn_pic);
         et_name = findViewById(R.id.et_name);
         et_content = findViewById(R.id.et_content);
 
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (isAccessibilitySettingsOn(mContext)) {
-                    String name = et_name.getText().toString().trim();
-                    String content = et_content.getText().toString().trim();
-                    ControlService.isSendSuccess = false;
-                    WechatUtils.NAME = name;
-                    WechatUtils.CONTENT = content;
-                    openWChart();
-                } else {
-                    Intent accessibleIntent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                    startActivity(accessibleIntent);
-                }
-            }
-        });
+        mTextBtn.setOnClickListener(this);
+        mPicBtn.setOnClickListener(this);
     }
-
-    /**
-     * 启动方法，规范代码
-     * @param context
-     */
-    public static void actionStart(Activity context) {
-        Intent intent = new Intent(context, AccessibilityActivity.class);
-        context.startActivity(intent);
-    }
-
-
 
     /**
      * 打开微信界面
      */
     private void openWChart() {
-
         Intent intent = new Intent();
         intent.setFlags(FLAG_ACTIVITY_NEW_TASK);
         intent.setClassName("com.tencent.mm", "com.tencent.mm.ui.LauncherUI");
         startActivity(intent);
-
     }
 
 
@@ -127,6 +104,46 @@ public class AccessibilityActivity extends AppCompatActivity {
             }
         }
         return false;
+    }
+
+    /**
+     * 启动方法，规范代码
+     * @param context
+     */
+    public static void actionStart(Activity context) {
+        Intent intent = new Intent(context, AccessibilityActivity.class);
+        context.startActivity(intent);
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.btn_text:
+                selectAction("text");
+                break;
+
+            case R.id.btn_pic:
+                selectAction("picture");
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    private void selectAction(String action) {
+        if (isAccessibilitySettingsOn(mContext)) {
+            String name = et_name.getText().toString().trim();
+            String content = et_content.getText().toString().trim();
+            ControlService.isSendSuccess = false;
+            WechatUtils.NAME = name;
+            WechatUtils.CONTENT = content;
+            WechatUtils.ACTION = action;
+            openWChart();
+        } else {
+            Intent accessibleIntent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            startActivity(accessibleIntent);
+        }
     }
 
 }

@@ -26,6 +26,12 @@ public class WechatUtils {
     public static String CONTENT;
 
     /**
+     * "text"
+     * "pic"
+     */
+    public static String ACTION;
+
+    /**
      * 在当前页面查找文字内容并点击
      *
      * @param text
