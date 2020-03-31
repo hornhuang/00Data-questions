@@ -1,0 +1,2 @@
+rootProject.name='00Data-questions'
+include ':app'
