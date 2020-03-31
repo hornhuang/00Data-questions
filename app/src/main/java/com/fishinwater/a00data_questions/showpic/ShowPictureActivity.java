@@ -24,7 +24,7 @@ public class ShowPictureActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         ActivityShowPictureBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_show_picture);
 
-        PicViewModel viewModel = new PicViewModel(new Info());
+        PicViewModel viewModel = new PicViewModel(new Info(),this);
         binding.setViewModel(viewModel);
         viewModel.init();
 
