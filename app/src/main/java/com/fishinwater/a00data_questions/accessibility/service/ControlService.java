@@ -28,7 +28,10 @@ import java.util.List;
  */
 public class ControlService extends AccessibilityService {
 
-    private static final String TAG = "ControlService";
+    /**
+     * 一些基本包名.类名
+     */
+    public final String TAG = getClass().getName();
     //微信包名
     private final static String WeChat_PNAME = "com.tencent.mm";
     //微信布局ID前缀
@@ -38,49 +41,38 @@ public class ControlService extends AccessibilityService {
     //微信聊天页面
     public static final String WECHAT_CLASS_CHATUI = "com.tencent.mm.ui.chatting.ChattingUI";
 
-    public static boolean isSendSuccess; //true 发送完成，  false 开始发送，还没发送呢
-
-    //微信版本                                6.7.3
-    private String searchedittextid = "bem";  //ji
-    private String searchlistviewid = "f13"; // bp0
+    public static boolean isSendSuccess; //true 发送表示完成
 
     /**
-     * 聊天界面
+     * 支支持最新的微信版本
+     *
+     * 由于各个版本 id 都不一样，一个个搞太可怕了
+     * 就用最新的了
      */
-    private String chatuiedittextid = "ajs"; //  aep
-    private String chatuiusernameid = "g1r";  //  j1
-    private String chatuiswitchid = "alt";   //  aen
+    private String searchedittextid = "bem";
+    private String searchlistviewid = "f13";
+    private String backimageviewid = "dn";
+
+    /**
+     * 聊天界面各个 id
+     * 都是基于最新的
+     */
+    private String chatuiedittextid = "ajs";
+    private String chatuiusernameid = "g1r";
+    private String chatuiswitchid = "alt";
 
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        // 拿下，后面拿去匹配
         String className = event.getClassName().toString();
-        Log.i(TAG, "event >> TYPE:" + event.getEventType());
-        Log.i(TAG, "event >> ClassName:" + className);
-
-        switch (event.getEventType()) {
-            case AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED:
-                //通知栏状态变化事件回调
-                if (WeChat_PNAME.equals(event.getPackageName().toString())) {
-                    sendNotifacationReply(event);
-                }
+        // 更具包名+类名判断当前在那个界面
+        switch (className) {
+            case WECHAT_CLASS_LAUNCHUI:
+                handleFlow_clickSearch();
                 break;
-            case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
-                //窗口状态变化事件回调
-
-                //如果是主动发送消息，成功之后  就不能继续监听事件了
-                //如果不是主动发送消息，那么 根本没必要监听这个事件，被动接收消息，都是监听通知栏变化直接跳转到聊天界面，监听TYPE_WINDOW_CONTENT_CHANGED即可
-                if (isSendSuccess) {
-                    return;
-                }
-                switch (className) {
-                    case WECHAT_CLASS_LAUNCHUI:
-                        handleFlow_clickSearch();
-                        break;
-                    case WECHAT_CLASS_CHATUI:
-                        handleFlow_ChatUI();
-                        break;
-                }
+            case WECHAT_CLASS_CHATUI:
+                handleFlow_ChatUI();
                 break;
         }
     }
@@ -95,13 +87,14 @@ public class ControlService extends AccessibilityService {
      */
     private void handleFlow_clickSearch() {
         try {
-            //如果没有名字，说明不是主动发送的，就没有必要搜索了
+            // 如果没有名字，说明不是主动发送的，就没有必要搜索了
             if (TextUtils.isEmpty(WechatUtils.NAME)) {return;}
 
-            //调起微信之后，不管在什么页面，先查找返回键并点击：防止在其他页面查找不到搜索按钮
+            // 调起微信之后，不管在什么页面，先查找返回键并点击：防止在其他页面查找不到搜索按钮
             Thread.sleep(100);
-
-            WechatUtils.findTextAndClick(this, "返回");
+            // 博客太旧了，旧版才有‘返回’按钮，现在应该换
+            // WechatUtils.findTextAndClick(this, "返回");
+            WechatUtils.findViewIdAndClick(this, BaseLayoutId + backimageviewid);
 
             Thread.sleep(500);
 
@@ -119,15 +112,18 @@ public class ControlService extends AccessibilityService {
      * 搜索界面粘贴要搜索的内容
      */
     private void handleFlow_past() {
+        // 这个对象是拿来获得界面上的控件
+        // 就类似 fragment 里面用的 view.findViewById 的 view
         AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
         if (nodeInfo != null) {
+            // 还是老样子获得匹配到的列表
             List<AccessibilityNodeInfo> list = nodeInfo.findAccessibilityNodeInfosByViewId(BaseLayoutId + searchedittextid);
             if (list != null && list.size() > 0) {
                 for (final AccessibilityNodeInfo node : list) {
                     if (node.getClassName().equals("android.widget.EditText") && node.isEnabled()) {
                         try {
                             Thread.sleep(350);
-
+                            // 把咱们要找的人，从中文换成拼音，粘贴上去
                             WechatUtils.pastContent(this, node, PinYinUtil.getPinYinUtil().getStringPinYin(WechatUtils.NAME));
 
                             Thread.sleep(500);
@@ -147,20 +143,31 @@ public class ControlService extends AccessibilityService {
      * 点击搜索到的结果
      */
     private void clickSearchResult() {
+        // 都是一样的套路，获得 Root
         AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
         if (nodeInfo != null) {
+            // 获得 list 上面的控件
             List<AccessibilityNodeInfo> list1 = nodeInfo.findAccessibilityNodeInfosByViewId(BaseLayoutId + searchlistviewid);
             if (list1 != null && list1.size() > 0) {
+                // 虽然比配到的可能很多，但是咱们只要找最匹配的那个，也就是第一个
                 AccessibilityNodeInfo listInfo = list1.get(0);
                 for (int i = 0; i < listInfo.getChildCount(); i++) {
+                    // 循环遍历找名字
                     AccessibilityNodeInfo itemNodeInfo = listInfo.getChild(i);
                     for (int j = 0; j < itemNodeInfo.getChildCount(); j++) {
                         CharSequence name = itemNodeInfo.getChild(j).getText();
                         Log.i(TAG, "childName:" + name);
+                        // 这个很重要，
                         if (!TextUtils.isEmpty(name)
                                 && TextUtils.equals(PinYinUtil.getPinYinUtil().getStringPinYin(name.toString()),
                                 PinYinUtil.getPinYinUtil().getStringPinYin(WechatUtils.NAME))) {
                             itemNodeInfo.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                            try {
+                                Thread.sleep(350);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            handleFlow_ChatUI2();
                             return;
                         }
                     }
@@ -184,6 +191,34 @@ public class ControlService extends AccessibilityService {
         }
     }
 
+    private void handleFlow_ChatUI2() {
+        //如果微信已经处于聊天界面，需要判断当前联系人是不是需要发送的联系人
+        String curUserName = WechatUtils.findTextById(this, BaseLayoutId + chatuiusernameid);
+
+        WechatUtils.NAME = "";
+        if (TextUtils.isEmpty(WechatUtils.CONTENT)) {
+            if (WechatUtils.findViewId(this, BaseLayoutId + chatuiedittextid)) {
+                //当前页面可能处于发送文字状态，需要切换成发送文本状态
+                WechatUtils.findViewIdAndClick(this, BaseLayoutId + chatuiswitchid);
+            }
+            isSendSuccess = true;
+            return;
+        }
+        if (WechatUtils.findViewByIdAndPasteContent(this, BaseLayoutId + chatuiedittextid, WechatUtils.CONTENT)) {
+            sendContent();
+        } else {
+            //当前页面可能处于发送语音状态，需要切换成发送文本状态
+            WechatUtils.findViewIdAndClick(this, BaseLayoutId + chatuiswitchid);
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            sendContent();
+        }
+    }
 
     private void handleFlow_ChatUI() {
         //如果微信已经处于聊天界面，需要判断当前联系人是不是需要发送的联系人
@@ -217,8 +252,8 @@ public class ControlService extends AccessibilityService {
             }
         } else {
             //回到主界面
+            sendContent();
             WechatUtils.findTextAndClick(this, "返回");
-
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {

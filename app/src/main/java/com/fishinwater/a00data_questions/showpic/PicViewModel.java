@@ -41,20 +41,13 @@ public class PicViewModel extends BaseObservable {
         FormBody formBody = new FormBody
                 .Builder()
                 //设置参数名称和参数值
-                .add("i","2")
-                .add("t","2")
-                .add("v","1.0.0")
-                .add("from","wxapp")
-                .add("c","entry")
-                .add("a","wxapp")
-                .add("do","GetGoodPoster")
-                .add("sign","28ac5abff924bfa149a2e6343e173530")
+                .add("m","nets_haojk")
                 .build();
         Request request = new Request
                 .Builder()
                 //Post请求的参数传递
                 .post(formBody)
-                .url("https://tkmp.tmtreading.cn/app/index.php")
+                .url("https://tkmp.tmtreading.cn/app/index.php?i=2&t=2&v=1.0.0&from=wxapp&c=entry&a=wxapp&do=GetGoodPoster&sign=28ac5abff924bfa149a2e6343e173530")
                 .build();
         okHttpClient.newCall(request).enqueue(new Callback() {
             @Override
@@ -65,13 +58,13 @@ public class PicViewModel extends BaseObservable {
             @Override
             public void onResponse(okhttp3.Call call, Response response) throws IOException {
                 try {
-                    dataBean = (Info) JSONObject.parse(response.body().string());
+                    String jString = response.body().string();
+                    String[] strings = jString.split(">");
+                    dataBean = JSONObject.parseObject(strings[strings.length-1], Info.class);
                     setDataBean(dataBean);
                 }catch (Exception e) {
                     Log.d(TAG,  e.getMessage() + "");
-                    setDataRes("https://tkmp.tmtreading.cn/addons/nets_haojk/cache/71c13eb73bc5bb9e3f8c1657f4190de0.jpg");
                 }
-
             }
         });
     }
