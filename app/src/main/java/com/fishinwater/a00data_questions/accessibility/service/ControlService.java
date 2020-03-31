@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import com.fishinwater.a00data_questions.accessibility.utils.PinYinUtil;
 import com.fishinwater.a00data_questions.accessibility.utils.WechatUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -45,7 +46,7 @@ public class ControlService extends AccessibilityService {
 
     /**
      * 支支持最新的微信版本
-     *
+     * <p>
      * 由于各个版本 id 都不一样，一个个搞太可怕了
      * 就用最新的了
      */
@@ -61,7 +62,6 @@ public class ControlService extends AccessibilityService {
     private String chatuiusernameid = "g1r";
     private String chatuiswitchid = "alt";
 
-
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         // 拿下，后面拿去匹配
@@ -72,7 +72,13 @@ public class ControlService extends AccessibilityService {
                 handleFlow_clickSearch();
                 break;
             case WECHAT_CLASS_CHATUI:
-                handleFlow_ChatUI();
+                if (WechatUtils.ACTION.equals("text")) {
+                    Log.d(TAG, 2 + " text");
+                    handleFlow_ChatUI2();
+                } else if (WechatUtils.ACTION.equals("picture")) {
+                    Log.d(TAG, 2 + " picture");
+                    handleFlow_ChatUI_PIC();
+                }
                 break;
         }
     }
@@ -88,7 +94,9 @@ public class ControlService extends AccessibilityService {
     private void handleFlow_clickSearch() {
         try {
             // 如果没有名字，说明不是主动发送的，就没有必要搜索了
-            if (TextUtils.isEmpty(WechatUtils.NAME)) {return;}
+            if (TextUtils.isEmpty(WechatUtils.NAME)) {
+                return;
+            }
 
             // 调起微信之后，不管在什么页面，先查找返回键并点击：防止在其他页面查找不到搜索按钮
             Thread.sleep(100);
@@ -167,7 +175,13 @@ public class ControlService extends AccessibilityService {
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
-                            handleFlow_ChatUI2();
+                            if (WechatUtils.ACTION.equals("text")) {
+                                Log.d(TAG, 2 + " text");
+                                handleFlow_ChatUI2();
+                            } else if (WechatUtils.ACTION.equals("picture")) {
+                                Log.d(TAG, 2 + " picture");
+                                handleFlow_ChatUI_PIC();
+                            }
                             return;
                         }
                     }
@@ -215,12 +229,85 @@ public class ControlService extends AccessibilityService {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
             sendContent();
         }
     }
 
-    private void handleFlow_ChatUI() {
+    private AccessibilityNodeInfo accessbiltyContent(AccessibilityNodeInfo parentView, String strAddress) throws Exception {
+        int childCount = parentView.getChildCount();
+        for (int i = 0; i < childCount; ++i) {
+            AccessibilityNodeInfo child = parentView.getChild(i);
+            child = null;
+            if (child != null) {
+                String strToAddress = strAddress + " > " + child.getClassName().toString();
+                String nodeText = "";
+                if (child.getText() != null) nodeText = child.getText().toString();
+                accessbiltyContent(child, strToAddress);
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
+
+
+    /**
+     * 点击搜索到的结果
+     */
+    private void clickPicResult() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        // 都是一样的套路，获得 Root
+        AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
+        List<AccessibilityNodeInfo> list1 = nodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/dgf");
+        List<AccessibilityNodeInfo> list2 = nodeInfo.findAccessibilityNodeInfosByText("发送");
+        Log.d(TAG, list1.size() + " +++ " + nodeInfo.getChildCount());
+        Log.d(TAG, list2.size() + " +++ " + nodeInfo.getChildCount());
+
+//        while ( nodeInfo.getChildCount() != 0) {
+//            list1 = nodeInfo.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/b5x");
+//            Log.d(TAG,  " +++ " + nodeInfo.getChildCount());
+//            if (list1.size() != 0) {
+//                break;
+//            }
+//            nodeInfo = nodeInfo.getChild(0);
+//        }
+//        Log.d(TAG, list1.size() + " +++ " + nodeInfo.getChildCount());
+
+//        while (nodeInfo.getChildCount() != 0) {//BaseLayoutId + "dgf"
+//            list1 = nodeInfo.findAccessibilityNodeInfosByViewId("android:id/content");
+//            Log.d(TAG, 2222222 + "====" + list1.size());
+//            Log.d(TAG, 1111111 + "++++" + nodeInfo.getChildCount());
+//            if (list1.size() == 0) {
+//                nodeInfo = nodeInfo.getChild(nodeInfo.getChildCount()-1);
+//            }else {
+//                nodeInfo = list1.get(0);
+//                Log.d(TAG, 7777777 + "" + nodeInfo.getChildCount());
+//                break;
+//            }
+//        }
+//
+//
+        Log.d(TAG, 66666 + "" + list1.size());
+
+        if (list1 != null && list1.size() > 0) {
+            // 虽然比配到的可能很多，但是咱们只要找最匹配的那个，也就是第一个
+            AccessibilityNodeInfo listInfo = list1.get(0);
+            list1 = listInfo.findAccessibilityNodeInfosByViewId(BaseLayoutId + "dg_");
+            Log.d(TAG, 666666 + "" + listInfo);
+            for (int i = 0; i < listInfo.getChildCount(); i++) {
+                // 循环遍历找名字
+                list1.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                list2.get(0).performAction(AccessibilityNodeInfo.ACTION_CLICK);
+                Log.d(TAG, 666666 + "" + list2.size());
+            }
+        }
+    }
+
+    private void handleFlow_ChatUI_Text() {
         //如果微信已经处于聊天界面，需要判断当前联系人是不是需要发送的联系人
         String curUserName = WechatUtils.findTextById(this, BaseLayoutId + chatuiusernameid);
         if (!TextUtils.isEmpty(curUserName)
@@ -228,14 +315,15 @@ public class ControlService extends AccessibilityService {
                 PinYinUtil.getPinYinUtil().getStringPinYin(WechatUtils.NAME))) {
             WechatUtils.NAME = "";
             if (TextUtils.isEmpty(WechatUtils.CONTENT)) {
-                if (WechatUtils.findViewId(this, BaseLayoutId + chatuiedittextid)) {
+                if (WechatUtils.findViewId(this, BaseLayoutId + "aja")) {
                     //当前页面可能处于发送文字状态，需要切换成发送文本状态
                     WechatUtils.findViewIdAndClick(this, BaseLayoutId + chatuiswitchid);
                 }
                 isSendSuccess = true;
                 return;
             }
-            if (WechatUtils.findViewByIdAndPasteContent(this, BaseLayoutId + chatuiedittextid, WechatUtils.CONTENT)) {
+
+            if (WechatUtils.findViewByIdAndPasteContent(this, BaseLayoutId + "aja", WechatUtils.CONTENT)) {
                 sendContent();
             } else {
                 //当前页面可能处于发送语音状态，需要切换成发送文本状态
@@ -250,6 +338,53 @@ public class ControlService extends AccessibilityService {
                 if (WechatUtils.findViewByIdAndPasteContent(this, BaseLayoutId + chatuiedittextid, WechatUtils.CONTENT))
                     sendContent();
             }
+        } else {
+            //回到主界面
+            sendContent();
+            WechatUtils.findTextAndClick(this, "返回");
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            WechatUtils.findTextAndClick(this, "返回");//再次点击返回，目的是防止上一次返回到搜索页面，那样就阻塞住了
+        }
+    }
+
+    private void handleFlow_ChatUI_PIC() {
+        //如果微信已经处于聊天界面，需要判断当前联系人是不是需要发送的联系人
+        String curUserName = WechatUtils.findTextById(this, BaseLayoutId + chatuiusernameid);
+        if (!TextUtils.isEmpty(curUserName)
+                && TextUtils.equals(PinYinUtil.getPinYinUtil().getStringPinYin(curUserName),
+                PinYinUtil.getPinYinUtil().getStringPinYin(WechatUtils.NAME))) {
+            WechatUtils.NAME = "";
+            if (TextUtils.isEmpty(WechatUtils.CONTENT)) {
+                if (WechatUtils.findViewId(this, BaseLayoutId + "aja")) {
+                    //当前页面可能处于发送文字状态，需要切换成发送文本状态
+                    WechatUtils.findViewIdAndClick(this, BaseLayoutId + chatuiswitchid);
+                }
+                isSendSuccess = true;
+                return;
+            }
+            WechatUtils.findViewIdAndClick(this, BaseLayoutId + "aja");
+            WechatUtils.findViewIdAndClick(this, BaseLayoutId + "p5");
+            clickPicResult();
+//
+//            if (WechatUtils.findViewByIdAndPasteContent(this, BaseLayoutId + "aja", WechatUtils.CONTENT)) {
+//                sendContent();
+//            } else {
+//                //当前页面可能处于发送语音状态，需要切换成发送文本状态
+//                WechatUtils.findViewIdAndClick(this, BaseLayoutId + chatuiswitchid);
+//
+//                try {
+//                    Thread.sleep(100);
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//
+//                if (WechatUtils.findViewByIdAndPasteContent(this, BaseLayoutId + chatuiedittextid, WechatUtils.CONTENT))
+//                    sendContent();
+//            }
         } else {
             //回到主界面
             sendContent();
@@ -291,6 +426,7 @@ public class ControlService extends AccessibilityService {
 
     /**
      * 拉起微信界面
+     *
      * @param event 服务事件
      */
     private void sendNotifacationReply(AccessibilityEvent event) {
