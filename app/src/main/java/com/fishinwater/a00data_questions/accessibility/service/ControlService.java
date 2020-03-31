@@ -38,19 +38,18 @@ public class ControlService extends AccessibilityService {
     //微信聊天页面
     public static final String WECHAT_CLASS_CHATUI = "com.tencent.mm.ui.chatting.ChattingUI";
 
-
     public static boolean isSendSuccess; //true 发送完成，  false 开始发送，还没发送呢
 
     //微信版本                                6.7.3
-    private String searchedittextid = "ji";  //ji
-    private String searchlistviewid = "bp0"; // bp0
+    private String searchedittextid = "bem";  //ji
+    private String searchlistviewid = "f13"; // bp0
 
     /**
      * 聊天界面
      */
-    private String chatuiedittextid = "aie"; //  aep
-    private String chatuiusernameid = "j6";  //  j1
-    private String chatuiswitchid = "aic";   //  aen
+    private String chatuiedittextid = "ajs"; //  aep
+    private String chatuiusernameid = "g1r";  //  j1
+    private String chatuiswitchid = "alt";   //  aen
 
 
     @Override
@@ -187,7 +186,6 @@ public class ControlService extends AccessibilityService {
 
 
     private void handleFlow_ChatUI() {
-
         //如果微信已经处于聊天界面，需要判断当前联系人是不是需要发送的联系人
         String curUserName = WechatUtils.findTextById(this, BaseLayoutId + chatuiusernameid);
         if (!TextUtils.isEmpty(curUserName)
@@ -258,7 +256,6 @@ public class ControlService extends AccessibilityService {
 
     /**
      * 拉起微信界面
-     *
      * @param event 服务事件
      */
     private void sendNotifacationReply(AccessibilityEvent event) {

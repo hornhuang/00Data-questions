@@ -59,9 +59,9 @@ public class AccessibilityActivity extends AppCompatActivity {
     private void init() {
         Objects.requireNonNull(getSupportActionBar()).setTitle(R.string.accessibility_service);
 
-        button = (Button) findViewById(R.id.button);
-        et_name = (EditText) findViewById(R.id.et_name);
-        et_content = (EditText) findViewById(R.id.et_content);
+        button = findViewById(R.id.button);
+        et_name = findViewById(R.id.et_name);
+        et_content = findViewById(R.id.et_content);
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
